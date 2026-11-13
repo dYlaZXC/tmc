@@ -1,0 +1,104 @@
+:root {
+  --navy: #14394c;
+  --navy2: #1b4e63;
+  --teal: #128b91;
+  --teal2: #e7f6f5;
+  --sky: #eaf5fb;
+  --ink: #183746;
+  --muted: #607987;
+  --line: #dbe7ec;
+  --paper: #fff;
+  --bg: #f4f8fa;
+  --warm: #fff7e8;
+  --warmline: #efcf8d;
+  --red: #a84239;
+  --shadow: 0 12px 32px rgba(25, 67, 85, 0.08);
+  /* sticky header ≈ .header-main (92) + .nav (50) + gap; JS уточняет */
+  --scroll-pad: 154px;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+/*
+ * Anchor jumps stop below the sticky header. Only scroll-padding is used: the
+ * old site also set scroll-margin-top on every section, which doubled the gap.
+ */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--scroll-pad);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Arial, "DejaVu Sans", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+p { margin: 0; }
+ul { margin: 0; padding: 0; list-style: none; }
+button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.wrap {
+  width: min(1210px, calc(100% - 56px));
+  margin: auto;
+}
+
+/* keyboard focus (not present on the old site) */
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.hero :focus-visible,
+.utility :focus-visible,
+.faq-side :focus-visible,
+.footer :focus-visible {
+  outline-color: #83e2df;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* keyboard users can jump past the header straight to the content */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: var(--shadow);
+}
+.skip-link:focus {
+  top: 12px;
+}
+main:focus {
+  outline: none;
+}

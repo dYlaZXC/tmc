@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# tmc24.kz — сайт Телемедицинского центра города Алматы
 
-## Getting Started
+Исходный код сайта [tmc24.kz](https://tmc24.kz). Сайт пересобран на Next.js
+в ноябре 2026 года: исходники старой версии были утеряны, поэтому её восстановили
+с работающего сайта. Снимок старой версии лежит в [`legacy-site/`](legacy-site/)
+только для справки, в работе он не используется.
 
-First, run the development server:
+- **Стек:** Next.js 16 (App Router), React 19, TypeScript, обычный CSS.
+- **Языки:** русский `/`, казахский `/kk/`, английский `/en/`. У каждого языка
+  своя страница с `lang`, canonical и hreflang, плюс `sitemap.xml` и `robots.txt`.
+- **Хостинг:** сайт полностью статический. `npm run build` создаёт папку `out/`
+  с HTML/CSS/JS, её можно залить на любой веб-сервер (сейчас это Plesk + nginx).
+  Node.js на сервере не нужен.
+
+## Быстрый старт
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # разработка: http://localhost:3000
+npm run build      # продакшн-сборка в out/
+npm run preview    # посмотреть собранный out/ на http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Нужен Node.js 20.9+ (проверено на Node 24).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Что где менять
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Что | Где |
+|---|---|
+| Телефоны, WhatsApp, Instagram | [`src/config/site.ts`](src/config/site.ts) |
+| Тексты на всех языках | [`src/i18n/dictionaries/`](src/i18n/dictionaries/) (`ru.ts`, `kk.ts`, `en.ts`) |
+| Блоки страницы | [`src/components/sections/`](src/components/sections/) |
+| Шапка, подвал, переключатель языков | [`src/components/layout/`](src/components/layout/) |
+| Стили | [`src/styles/`](src/styles/), по файлу на раздел |
+| Фото в шапке (карусель) | `HERO_SLIDES` в [`src/components/sections/Hero.tsx`](src/components/sections/Hero.tsx) |
 
-## Learn More
+**Телефоны.** Публикуются только мобильные номера. Поле `tel` записывается
+в формате `+77XXXXXXXXX`, а `display` — это тот же номер с пробелами. Тесты
+проверяют, что они совпадают.
 
-To learn more about Next.js, take a look at the following resources:
+**Instagram.** Пока ссылка пустая (`instagram: ""`), кнопка показывается
+неактивной, а по клику объясняет, что ссылка появится после подтверждения
+Центром. Чтобы включить кнопку, вставьте полный `https://` адрес.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Тексты.** Русский словарь задаёт структуру. Если добавить ключ в `ru.ts` и
+не добавить его в `kk.ts` или `en.ts`, сборка упадёт с ошибкой TypeScript.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Картинки.** Оригиналы лежат в `legacy-site/assets/`. Команда `npm run images`
+заново собирает оптимизированные версии в `public/assets/`: фото в WebP,
+логотип 156 px. Новое фото положите рядом с оригиналами, добавьте его имя
+в `scripts/optimize-images.mjs` и в `HERO_SLIDES`.
 
-## Deploy on Vercel
+## Проверки
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run lint            # ESLint
+npm run typecheck       # TypeScript
+npm test                # unit-тесты (Vitest)
+npm run test:coverage   # unit-тесты с отчётом покрытия (порог 80%)
+npm run build && npm run test:e2e   # e2e-тесты (Playwright) по собранному out/
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Локально e2e-тесты запускаются в установленном Google Chrome. В CI или с
+переменной `PW_BUNDLED=1` используется Chromium от Playwright, его нужно один
+раз поставить командой `npx playwright install chromium`.
+
+## Деплой на текущий хостинг (Plesk)
+
+1. `npm ci && npm run build`
+2. Загрузите **содержимое** папки `out/` (не саму папку) в корень сайта,
+   обычно это `httpdocs/`. Старые файлы (`index.html`, `styles.css`, `main.js`,
+   `i18n.js`, `config.js`, `assets/`) перед этим удалите или перенесите в архив.
+3. Проверьте `https://tmc24.kz/`, `/kk/`, `/en/` и любой несуществующий адрес:
+   должна открыться страница 404 сайта.
+
+Чтобы на несуществующие адреса открывалась страница 404 сайта, добавьте
+в Plesk → *Apache & nginx Settings* → *Additional nginx directives*:
+
+```nginx
+error_page 404 /404.html;
+```
+
+Папки `/_next/static/` содержат файлы с хешем в имени, их можно кэшировать
+надолго:
+
+```nginx
+location ^~ /_next/static/ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+```
+
+## Отличия от старой версии
+
+Внешний вид перенесён один к одному: попиксельная сверка скриншотов на ширинах
+1440/768/390 px расходится меньше чем на 0,02%. Изменилось следующее:
+
+- У каждого языка теперь свой адрес. Раньше язык переключался скриптом,
+  и поисковики видели только русскую версию.
+- При смене языка страница остаётся на текущем разделе (`/#faq` → `/kk/#faq`).
+- Исправлена подсветка пункта меню: раньше почти на всей странице
+  подсвечивались «Контакты».
+- Исправлен двойной отступ при переходе по ссылке на раздел: раздел
+  оказывался на ~150 px ниже шапки.
+- Картинки стали легче (2,0 → 1,2 МБ, логотип 260 → 35 КБ). Фото карусели,
+  кроме первого, грузятся после загрузки страницы.
+- Пометка «для абонентов Beeline» переведена: раньше она оставалась
+  по-русски на казахской и английской страницах.
+- Добавлены `sitemap.xml`, `robots.txt`, страница 404, Open Graph на каждом
+  языке, ссылка «Перейти к содержимому» и видимый фокус для навигации
+  с клавиатуры.
+- Если в системе включено «уменьшить движение», карусель не крутится и
+  не скачивает остальные фото.
